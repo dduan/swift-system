@@ -20,6 +20,30 @@ extension FilePath {
     self.init(_platformString: platformString)
   }
 
+  public init(platformString: [CInterop.PlatformChar]) {
+    guard let _ = platformString.firstIndex(of: 0) else {
+      preconditionFailure(
+        "input of FilePath.init(platformString:) must be null-terminated"
+      )
+    }
+    self = platformString.withUnsafeBufferPointer {
+      FilePath(_platformString: $0.baseAddress!)
+    }
+  }
+
+  public init(platformString: inout CInterop.PlatformChar) {
+    guard platformString == 0 else {
+      preconditionFailure(
+        "input of FilePath.init(platformString:) must be null-terminated"
+      )
+    }
+    self = withUnsafePointer(to: &platformString, FilePath.init(_platformString:))
+  }
+
+  public init(platformString: String) {
+    self = platformString.withCString(FilePath.init(_platformString:))
+  }
+
   /// Calls the given closure with a pointer to the contents of the file path,
   /// represented as a null-terminated platform string.
   ///
@@ -60,6 +84,34 @@ extension FilePath.Component {
     self.init(_platformString: platformString)
   }
 
+  public init?(platformString: [CInterop.PlatformChar]) {
+    if let _ = platformString.firstIndex(of: 0),
+       let component = platformString.withUnsafeBufferPointer({
+         FilePath.Component(_platformString: $0.baseAddress!)
+       }) {
+      self = component
+      return
+    }
+    return nil
+  }
+
+  public init?(platformString: inout CInterop.PlatformChar) {
+    guard platformString == 0 else { return nil }
+    let component = withUnsafePointer(to: &platformString) {
+      FilePath.Component(_platformString: $0)
+    }
+    guard let component = component else { return nil }
+    self = component
+  }
+
+  public init?(platformString: String) {
+    let component = platformString.withCString {
+      FilePath.Component.init(_platformString: $0)
+    }
+    guard let component = component else { return nil }
+    self = component
+  }
+
   /// Calls the given closure with a pointer to the contents of the file path
   /// component, represented as a null-terminated platform string.
   ///
@@ -94,6 +146,34 @@ extension FilePath.Root {
   ///
   public init?(platformString: UnsafePointer<CInterop.PlatformChar>) {
     self.init(_platformString: platformString)
+  }
+
+  public init?(platformString: [CInterop.PlatformChar]) {
+    if let _ = platformString.firstIndex(of: 0),
+       let component = platformString.withUnsafeBufferPointer({
+         FilePath.Root(_platformString: $0.baseAddress!)
+       }) {
+      self = component
+      return
+    }
+    return nil
+  }
+
+  public init?(platformString: inout CInterop.PlatformChar) {
+    guard platformString == 0 else { return nil }
+    let root = withUnsafePointer(to: &platformString) {
+      FilePath.Root(_platformString: $0)
+    }
+    guard let root = root else { return nil }
+    self = root
+  }
+
+  public init?(platformString: String) {
+    let root = platformString.withCString {
+      FilePath.Root(_platformString: $0)
+    }
+    guard let root = root else { return nil }
+    self = root
   }
 
   /// Calls the given closure with a pointer to the contents of the file path
@@ -405,7 +485,23 @@ extension String {
 extension FilePath {
   /// For backwards compatibility only. This initializer is equivalent to
   /// the preferred `FilePath(platformString:)`.
+  @available(*, deprecated, renamed: "init(platformString:)")
   public init(cString: UnsafePointer<CChar>) {
+    self.init(platformString: cString)
+  }
+
+  @available(*, deprecated, renamed: "init(platformString:)")
+  public init(cString: [CChar]) {
+    self.init(platformString: cString)
+  }
+
+  @available(*, deprecated, renamed: "init(platformString:)")
+  public init(cString: inout CChar) {
+    self.init(platformString: &cString)
+  }
+
+  @available(*, deprecated, renamed: "init(platformString:)")
+  public init(cString: String) {
     self.init(platformString: cString)
   }
 
