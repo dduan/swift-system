@@ -24,6 +24,32 @@ extension String {
     self.init(_errorCorrectingPlatformString: platformString)
   }
 
+  public init(platformString: [CInterop.PlatformChar]) {
+    guard let _ = platformString.firstIndex(of: 0) else {
+      preconditionFailure(
+        "input of String.init(platformString:) must be null-terminated"
+      )
+    }
+    self = platformString.withUnsafeBufferPointer {
+      String(_errorCorrectingPlatformString: $0.baseAddress!)
+    }
+  }
+
+  @available(*, deprecated, message: "Use String(_ scalar: Unicode.Scalar)")
+  public init(platformString: inout CInterop.PlatformChar) {
+    guard platformString == 0 else {
+      preconditionFailure(
+        "input of String.init(platformString:) must be null-terminated"
+      )
+    }
+    self = ""
+  }
+
+  @available(*, deprecated, message: "Use a copy of the String argument")
+  public init(platformString: String) {
+    self = platformString.withCString(String.init(cString:))
+  }
+
   /// Creates a string by interpreting the null-terminated platform string as
   /// UTF-8 on Unix and UTF-16 on Windows.
   ///
@@ -36,6 +62,34 @@ extension String {
     validatingPlatformString platformString: UnsafePointer<CInterop.PlatformChar>
   ) {
     self.init(_platformString: platformString)
+  }
+
+  public init?(
+    validatingPlatformString platformString: [CInterop.PlatformChar]
+  ) {
+    if let _ = platformString.firstIndex(of: 0),
+       let string = platformString.withUnsafeBufferPointer({
+         String(validatingPlatformString: $0.baseAddress!)
+       }) {
+      self = string
+      return
+    }
+    return nil
+  }
+
+  @available(*, deprecated, message: "Use String(_ scalar: Unicode.Scalar)")
+  public init?(
+    validatingPlatformString platformString: inout CInterop.PlatformChar
+  ) {
+    guard platformString == 0 else { return nil }
+    self = ""
+  }
+
+  @available(*, deprecated, message: "Use a copy of the String argument")
+  public init?(
+    validatingPlatformString platformString: String
+  ) {
+    self = platformString.withCString(String.init(cString:))
   }
 
   /// Calls the given closure with a pointer to the contents of the string,
