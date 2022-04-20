@@ -9,6 +9,7 @@ See https://swift.org/LICENSE.txt for license information
 
 add_library(SystemPackage
   Errno.swift
+  Exit.swift
   FileDescriptor.swift
   FileHelpers.swift
   FileOperations.swift
